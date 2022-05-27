@@ -13,7 +13,7 @@ fn gat (
     match parse2(input)? {
         | Item::Trait(item_trait) => trait_def::handle(item_trait),
         | Item::Impl(item_impl) => trait_impl::handle(item_impl),
-        | item => bail!("expected a `trait` or an `impl… Trait for`"),
+        | _ => bail!("expected a `trait` or an `impl… Trait for`"),
     }
 }
 

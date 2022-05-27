@@ -56,7 +56,7 @@ fn mb_file_expanded (output: TokenStream2)
     ;
     let warning =
         compile_warning(&quote!(), &format!(
-            "Output emitted to {file_name}",
+            "Output emitted to {}", file_name,
         ))
     ;
     quote!(

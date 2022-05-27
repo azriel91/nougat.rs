@@ -30,9 +30,7 @@ prettyplease.optional = true
 prettyplease.version = "0.1.10"
 
 [features]
-default = [
-    "debug-macros",  # FIXME: remove!
-]
+default = []
 debug-macros = [
     "prettyplease",
 ]

@@ -32,9 +32,10 @@ fn Gat<Error : SynError> (
 
         match input {
             | Input::TypePath(it) => it,
-            | Input::Item(item) => {
-                return Ok(adjugate::adjugate(parse::Nothing, item));
-            },
+            | Input::Item(item) => return Ok(
+                adjugate::adjugate(parse::Nothing, item)
+                    .into_token_stream()
+            ),
         }
     };
     let qself = match qself {
@@ -124,10 +125,10 @@ trait SynError : Sized {
 }
 
 impl SynError for () {
-    fn new (s: Span, m: &str)
+    fn new (_: Span, _: &str)
     {}
 
-    fn new_spanned (s: &dyn ToTokens, m: &str)
+    fn new_spanned (_: &dyn ToTokens, _: &str)
     {}
 }
 

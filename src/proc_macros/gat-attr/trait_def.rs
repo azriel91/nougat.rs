@@ -5,9 +5,31 @@ fn handle (
     mut trait_: ItemTrait,
 ) -> Result<TokenStream2>
 {
+    // Conr-"adjugate" first, to tweak the impl bounds and so on.
+    trait_ =
+        match
+            adjugate::adjugate(
+                parse::Nothing,
+                Item::Trait(fold::Fold::fold_item_trait(
+                    &mut ReplaceSelfAssocLtWithSelfAsTraitAssocLt({
+                        let TraitName = &trait_.ident;
+                        let fwd_generics = trait_.generics.split_for_impl().1;
+                        parse_quote!(
+                            #TraitName #fwd_generics
+                        )
+                    }),
+                    trait_,
+                )),
+            )
+        {
+            | Item::Trait(it) => it,
+            | _ => unreachable!(),
+        }
+    ;
+
     // Extract the (lifetime) gats.
     #[allow(unstable_name_collisions)]
-    let mut lgats: Vec<LGat> =
+    let lgats: Vec<LGat> =
         trait_
             .items
             .drain_filter(|item| matches!(
@@ -67,7 +89,9 @@ fn handle (
             &generics.params,
             &generics.where_clause,
         );
+        let LGat { attrs, .. } = &lgat;
         ret.extend(quote!(
+            #(#attrs)*
             #[allow(warnings, clippy::all)]
             trait #TraitName <#intro_generics>
             #where_clause
@@ -87,21 +111,7 @@ fn handle (
         ));
     }
 
-    // time to Conr-"adjugate"
-    let trait_ = fold::Fold::fold_item_trait(
-        &mut {
-            let Trait = &trait_.ident;
-            let fwd_generics = trait_.generics.split_for_impl().1;
-            ReplaceSelfAssocLtWithSelfAsTraitAssocLt(parse_quote!(
-                #Trait #fwd_generics
-            ))
-        },
-        trait_,
-    );
-    ret.extend(adjugate::adjugate(
-        parse::Nothing,
-        Item::Trait(trait_),
-    ));
+    trait_.to_tokens(&mut ret);
 
     Ok(ret)
 }

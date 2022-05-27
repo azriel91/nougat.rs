@@ -6,7 +6,7 @@ fn handle (
 ) -> Result<TokenStream2>
 {
     let PathToTrait @ _ = match impl_.trait_ {
-        | Some((None, ref path, ref _for)) => path,
+        | Some((None, ref path, ref _for)) => path.clone(),
         | Some((Some(negative_impl), ..)) => bail! {
             "not supported" => negative_impl,
         },
@@ -14,9 +14,28 @@ fn handle (
             "expected `TraitName for`" => impl_.self_ty,
         },
     };
+
+    // Conr-"adjugate" first, to tweak the impl bounds and so on.
+    impl_ =
+        match
+            adjugate::adjugate(
+                parse::Nothing,
+                Item::Impl(fold::Fold::fold_item_impl(
+                    &mut ReplaceSelfAssocLtWithSelfAsTraitAssocLt(
+                        PathToTrait.clone(),
+                    ),
+                    impl_,
+                )),
+            )
+        {
+            | Item::Impl(it) => it,
+            | _ => unreachable!(),
+        }
+    ;
+
     // Extract the (lifetime) gats.
     #[allow(unstable_name_collisions)]
-    let mut lgats: Vec<LGat> =
+    let lgats: Vec<LGat> =
         impl_
             .items
             .drain_filter(|item| matches!(
@@ -67,7 +86,9 @@ fn handle (
         );
         let Implementor @ _ = &impl_.self_ty;
         let AssocTyValue @ _ = &lgat.value;
+        let LGat { attrs, .. } = &lgat;
         ret.extend(quote!(
+            #(#attrs)*
             #[allow(warnings, clippy::all)]
             impl <#intro_generics>
                 #PathToTrait
@@ -80,15 +101,7 @@ fn handle (
         ));
     }
 
-    // time to Conr-"adjugate"
-    let impl_ = fold::Fold::fold_item_impl(
-        &mut ReplaceSelfAssocLtWithSelfAsTraitAssocLt(PathToTrait.clone()),
-        impl_,
-    );
-    ret.extend(adjugate::adjugate(
-        parse::Nothing,
-        Item::Impl(impl_),
-    ));
+    impl_.to_tokens(&mut ret);
 
     Ok(ret)
 }

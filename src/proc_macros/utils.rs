@@ -66,6 +66,7 @@ impl<T> DrainFilterExt for Vec<T> {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! dbg_parse_quote {(
     $($code:tt)*
 ) => (
@@ -87,6 +88,7 @@ macro_rules! dbg_parse_quote {(
     })()
 )} pub(in crate) use dbg_parse_quote;
 
+#[allow(dead_code)]
 pub(in crate)
 fn compile_warning (
     span: &dyn ToTokens,
@@ -97,9 +99,9 @@ fn compile_warning (
     let fst = spans.next().unwrap_or_else(|| Span::call_site());
     let lst = spans.fold(fst, |cur, _| cur);
     let nougat_ = Ident::new("nougat_", fst);
-    let warning = Ident::new("warning", fst);
+    let warning = Ident::new("warning", lst);
     let ref message = ["\n", message].concat();
-    quote!(
+    quote_spanned!(lst=>
         const _: () = {
             mod nougat_ {
                 #[deprecated(note = #message)]

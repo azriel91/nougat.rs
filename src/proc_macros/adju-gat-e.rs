@@ -6,15 +6,14 @@ use super::*;
 
 pub(in super)
 fn adjugate (
-    attrs: parse::Nothing,
+    _attrs: parse::Nothing,
     input: Item,
-) -> TokenStream2
+) -> Item
 {
-    let ret = fold::Fold::fold_item(
+    fold::Fold::fold_item(
         &mut ApplyGatToEachTypePathOccurrence,
         input,
-    );
-    ret.into_token_stream()
+    )
 }
 
 struct ApplyGatToEachTypePathOccurrence;
